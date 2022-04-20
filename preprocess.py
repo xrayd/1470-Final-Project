@@ -41,4 +41,4 @@ def create_chardict(strings):
     return charlist
 
 
-preprocess()
+train, test, total, dict = preprocess()
