@@ -5,10 +5,11 @@ import h5py
 
 # hyperparameters for dataset processing
 MAX_SMILE_LENGTH = 80
-SAMPLE_NUM = 100_000  # we have a total of 1,678,393 molecules available; preprocess time depends on this; 500k base
+SAMPLE_NUM = 500_000  # we have a total of 1,678,393 molecules available; preprocess time depends on this; 500k base
 SMILES_COL_NAME = 'canonical_smiles'  # this is default column name
 TEST_SIZE = 0.2
-DATA_FILE = 'data/chembl22.h5'
+IN_FILE = 'data/chembl_22_chemreps.txt.gz'
+OUT_FILE = 'chembl22/chembl22.h5'
 DICT_NAME = 'dictionary'
 TRAIN_NAME = 'train_encodings'
 TEST_NAME = 'test_encodings'
@@ -24,7 +25,7 @@ def preprocess():
     character_dict: list of all characters present in our dataset
     """
     print("Accessing data...")
-    chembl22 = pd.read_table('data/chembl_22_chemreps.txt.gz', compression='gzip')
+    chembl22 = pd.read_table(IN_FILE, compression='gzip')
     within_length = chembl22[SMILES_COL_NAME].map(len) <= MAX_SMILE_LENGTH  # list of true/false if under length
     chembl22 = chembl22[within_length].sample(n=SAMPLE_NUM)
     smiles_strings = chembl22[SMILES_COL_NAME]
@@ -38,7 +39,7 @@ def preprocess():
     test_smiles = np.array(test_smiles.map(lambda x: one_hot_smile(x, character_dict)))
 
     print("Loading data into h5py file...")
-    with h5py.File(DATA_FILE, 'w') as f:  # saves all data to h5 file; copies over train_smiles and test_smiles to data
+    with h5py.File(OUT_FILE, 'w') as f:  # saves all data to h5 file; copies over train_smiles and test_smiles to data
         f.create_dataset(DICT_NAME, data=[char.encode('utf-8') for char in character_dict])
 
         train = f.create_dataset(TRAIN_NAME, shape=(len(train_smiles), MAX_SMILE_LENGTH, len(character_dict)))
@@ -126,13 +127,12 @@ def display_data(dataset):
     Prints information about the dataset, then the entire dataset for a given name in the h5 file.
     :param dataset: name of dataset to display from h5py
     '''
-    h5 = h5py.File(DATA_FILE)
+    h5 = h5py.File(OUT_FILE)
     print(h5[dataset])
     print("")
     print(h5[dataset][:])  # prints whole dataset
-    print("")
-    print(h5[dataset][0])  # prints 0th element of dataset
 
 
 preprocess()
+display_data(DICT_NAME)
 display_data(TRAIN_NAME)
