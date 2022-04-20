@@ -1,18 +1,23 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split as split
 import numpy as np
+import h5py
 
 # hyperparameters for dataset processing
 MAX_SMILE_LENGTH = 80
-SAMPLE_NUM = 10_000  # we have a total of 1,678,393 molecules available; preprocess time depends on this; 500k base
+SAMPLE_NUM = 100_000  # we have a total of 1,678,393 molecules available; preprocess time depends on this; 500k base
 SMILES_COL_NAME = 'canonical_smiles'  # this is default column name
 TEST_SIZE = 0.2
+DATA_FILE = 'data/chembl22.h5'
+DICT_NAME = 'dictionary'
+TRAIN_NAME = 'train_encodings'
+TEST_NAME = 'test_encodings'
 
 
 def preprocess():
     """
     dataset from: ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/releases/chembl_22/archived/chembl_22_chemreps.txt.gz.
-    Reads compressed molecule data and preprocesses it.
+    Reads compressed molecule data and preprocesses it. Saves output to h5py file for data storage!
     :returns:
     train_indices: (len(train), MAX_SMILE_LENGTH, len(char_dict)) shaped numpy array representing one-hot encodings for all letters for all train SMILEs
     test_indices: (len(test), MAX_SMILE_LENGTH, len(char_dict)) shaped numpy array representing one-hot encodings for all letters for all test SMILEs
@@ -32,6 +37,19 @@ def preprocess():
     train_smiles = np.array(train_smiles.map(lambda x: one_hot_smile(x, character_dict)))
     test_smiles = np.array(test_smiles.map(lambda x: one_hot_smile(x, character_dict)))
 
+    print("Loading data into h5py file...")
+    with h5py.File(DATA_FILE, 'w') as f:  # saves all data to h5 file; copies over train_smiles and test_smiles to data
+        f.create_dataset(DICT_NAME, data=[char.encode('utf-8') for char in character_dict])
+
+        train = f.create_dataset(TRAIN_NAME, shape=(len(train_smiles), MAX_SMILE_LENGTH, len(character_dict)))
+        for i in range(len(train)):
+            train[i] = train_smiles[i]
+
+        test = f.create_dataset(TEST_NAME, shape=(len(test_smiles), MAX_SMILE_LENGTH, len(character_dict)))
+        for i in range(len(test)):
+            test[i] = test_smiles[i]
+
+    print("Preprocess complete!")
     return train_smiles, test_smiles, character_dict
 
 
@@ -103,4 +121,18 @@ def un_encode(smile_onehots, character_dict):
     return smile
 
 
+def display_data(dataset):
+    '''
+    Prints information about the dataset, then the entire dataset for a given name in the h5 file.
+    :param dataset: name of dataset to display from h5py
+    '''
+    h5 = h5py.File(DATA_FILE)
+    print(h5[dataset])
+    print("")
+    print(h5[dataset][:])  # prints whole dataset
+    print("")
+    print(h5[dataset][0])  # prints 0th element of dataset
+
+
 preprocess()
+display_data(TRAIN_NAME)
