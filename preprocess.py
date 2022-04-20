@@ -9,10 +9,9 @@ SMILES_COL_NAME = 'canonical_smiles'  # this is default column name
 TEST_SIZE = 0.2
 
 
-# dataset from: ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/releases/chembl_22/archived/chembl_22_chemreps.txt.gz
-# saves dataset to h5 dataset file to prevent running this over and over
 def preprocess():
     """
+    dataset from: ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/releases/chembl_22/archived/chembl_22_chemreps.txt.gz.
     Reads compressed molecule data and preprocesses it.
     :returns:
     train_indices: numpy array of indices of the training SMILES in smiles_strings
@@ -24,15 +23,36 @@ def preprocess():
     within_length = chembl22[SMILES_COL_NAME].map(len) <= MAX_SMILE_LENGTH  # list of true/false if under length
     chembl22 = chembl22[within_length].sample(n=SAMPLE_NUM)
     smiles_strings = chembl22[SMILES_COL_NAME]
+
     character_dict = create_chardict(smiles_strings)
-    # gets the indices of the SMILES strings for both train and test as Numpy array
-    train_indices, test_indices = map(np.array, split(smiles_strings.index, shuffle=True, test_size=TEST_SIZE))
+    character_dict.append(' ')  # appends the padding character whitespace
 
-    return train_indices, test_indices, smiles_strings, character_dict
+    train_smiles, test_smiles = split(smiles_strings, shuffle=True, test_size=TEST_SIZE)
+    print(len(train_smiles))
+    print(train_smiles.head)
+    print(len(test_smiles))
+    train_smiles = train_smiles.map(lambda x: one_hot_smile(x, character_dict))
+    test_smiles = test_smiles.map(lambda x: one_hot_smile(x, character_dict))
+    print(len(train_smiles))
+    print(train_smiles.head)
+    print(len(test_smiles))
+
+    # print(character_dict)
+    # print(len(character_dict))
+    # print(train_smiles[0])
+    # print("")
+    # test = one_hot_smile(train_smiles[0], character_dict)
+    # print(un_encode(test, character_dict))
+
+    return np.array(train_smiles), np.array(test_smiles), character_dict
 
 
-# given a list of strings, creates a dictionary list of all characters in all strings
 def create_chardict(strings):
+    """
+    Given a list of strings, creates a dictionary list of all characters in all strings.
+    :param strings: list, array, or dataframe of strings to find dictionary
+    :return: list of all characters in strings
+    """
     charset = set()
     for string in strings:
         for char in string:
@@ -41,4 +61,58 @@ def create_chardict(strings):
     return charlist
 
 
-train, test, total, dict = preprocess()
+def one_hot_smile(smile_string, character_dict):
+    """
+    Turns a smile string into a one-hot encoded vector for each letter in dictionary.
+    :param smile_string: string to turn into one-hot vectors
+    :param character_dict: list dictionary containing all letters
+    :return: numpy array representation of the vector, containing a one-hot array over dictionary
+    for each letter in smile_string. (EX: if first letter is 'c', the first row is a one-hot array with [0, 0, 1, 0],
+    where 0 = 'h', 1 = 'b', 2 = 'c', 3 = '0').
+    """
+    smile_string = pad_smile(smile_string)
+    one_hots = [create_one_hot(character_dict.index(char), character_dict) for char in smile_string]
+    one_hots = np.array(one_hots)
+    return one_hots
+
+
+def create_one_hot(index, character_dict):
+    """
+    Creates a viable 1D one-hot array where all values are zero but the index
+    :param index: index that the letter is
+    :param character_dict: list dictionary containing all letters
+    :return: 1D one-hot array for the given index
+    """
+    one_hot = [0 for i in range(len(character_dict))]
+    one_hot[index] = 1
+    return one_hot
+
+
+def pad_smile(smile_string):
+    """
+    Pads a SMILE string so they're all the same length as defined in hyperparameters
+    :param smile_string: string to pad
+    :return: padded SMILE string (if MAX_LENGTH is 120, it will left adjust the text, then pad with spaces until 120)
+    """
+    if len(smile_string) == MAX_SMILE_LENGTH:
+        return smile_string
+    else:
+        return smile_string.ljust(MAX_SMILE_LENGTH)
+
+
+def un_encode(smile_onehots, character_dict):
+    """
+    Mostly used for testing, but can unencode from one-hots to SMILE strings. Verified as accurate!
+    :param smile_onehots: 2D array of one-hot encodings for a given SMILE string
+    :param character_dict: z1.append([s.strip()])
+    :return: the SMILE string represented by the array of one hots
+    """
+    smile = ""
+    for i in range(len(smile_onehots)):
+        for j in range(len(smile_onehots[i])):
+            if smile_onehots[i][j]:
+                smile += character_dict[j]
+    return smile
+
+
+preprocess()
