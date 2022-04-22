@@ -28,7 +28,7 @@ class Model(tf.keras.Model):
         encoder_out = self.encoder(input)
         mu = self.mu_layer(encoder_out)
         logvar = self.logvar_layer(encoder_out)
-        latent_rep = encoder_out  # TODO: REPARAMETRIZE INSTEAD
+        latent_rep = self.reparametrize(mu, logvar)
         decoder_out = self.decoder(latent_rep)
         return decoder_out, mu, logvar
 
@@ -37,3 +37,8 @@ class Model(tf.keras.Model):
         reconstruction_loss = bce_loss(input, decoder_out) * input.shape[-1]
         kl_loss = -0.5 * tf.math.reduce_sum(1 + logvar - tf.math.square(mu) - tf.math.exp(logvar))
         return (reconstruction_loss + kl_loss) / input.shape[0]
+
+    def reparametrize(self, mu, logvar):
+        epsilon = tf.random.normal((mu.shape[0], mu.shape[1]))
+        sigma = tf.math.sqrt(tf.math.exp(logvar))
+        return sigma * epsilon + mu
