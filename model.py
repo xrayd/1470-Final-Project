@@ -20,13 +20,13 @@ class Encoder(tf.keras.Model):
         out = self.c3(out)
         out = self.flatten(out)
         out = self.dense(out)
-        # TODO: get mu and logvar from lambda class like VAE assignment and return it
+        # TODO: get mu and logvar from lambda class like VAE assignment and return it; return out, mu, logvar
 
-    def loss(self, x_hat, x, mu, logvar):  # implementation of VAE loss; combo of reconstruction and KL
+    def loss(self, decoder_out, input, mu, logvar):  # implementation of VAE loss; combo of reconstruction and KL
         bce_loss = tf.keras.losses.BinaryCrossentropy(from_logits=False, reduction=tf.keras.losses.Reduction.SUM,)
-        reconstruction_loss = bce_loss(x, x_hat) * x.shape[-1]
+        reconstruction_loss = bce_loss(input, decoder_out) * input.shape[-1]
         kl_loss = -0.5 * tf.math.reduce_sum(1 + logvar - tf.math.square(mu) - tf.math.exp(logvar))
-        return (reconstruction_loss + kl_loss) / x.shape[0]
+        return (reconstruction_loss + kl_loss) / input.shape[0]
 
 
 class Decoder(tf.keras.Model):
