@@ -5,7 +5,7 @@ from preprocess import MAX_SMILE_LENGTH
 class Model(tf.keras.Model):
 
     def __init__(self):
-        super(Model, self).__init__()  # TODO: implement these sizes
+        super(Model, self).__init__()  # TODO: IMPLEMENT ALL THE SIZES FOUND HERE
         self.input_size = 0
         self.latent_size = 0
         self.hidden_dim = 128

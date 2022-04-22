@@ -2,7 +2,7 @@ import tensorflow as tf
 from preprocess import SAMPLE_NUM, TRAIN_NAME
 
 
-def train(model, data, batch_size=1000):  # TODO: make both encoder and decoder into one model?
+def train(model, data, batch_size=1000):
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
     total_loss = 0
     for i in range(0, SAMPLE_NUM, batch_size):
@@ -14,6 +14,7 @@ def train(model, data, batch_size=1000):  # TODO: make both encoder and decoder 
         gradient = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradient, model.trainable_variables))
     return total_loss
+
 
 def main():
     """
