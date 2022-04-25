@@ -4,11 +4,11 @@ import h5py
 from model import Model
 
 
-def train(model, data, batch_size=1000):
+def train_model(model, data, batch_size=1000):
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
     total_loss = 0
     for i in range(0, data.shape[0], batch_size):  # loop over all training examples we have
-        inputs = data[TRAIN_NAME][i:i+batch_size]  # creating a batch of inputs here
+        inputs = data[i:i+batch_size]  # creating a batch of inputs here
         out, mu, logvar = model.call(inputs)
         with tf.GradientTape() as tape:
             loss = model.loss(out, inputs, mu, logvar)
@@ -27,9 +27,15 @@ def main():
     train = data[TRAIN_NAME][:]
     test = data[TEST_NAME][:]
 
-    molencoder = Model()
+    print(train.shape)
+    input()
 
-    total_loss = train(molencoder, train)
+    print("Now making model")
+    molencoder = Model()
+    input()
+
+    print("Now training")
+    total_loss = train_model(molencoder, train)
 
 
 if __name__ == "__main__":

@@ -133,6 +133,7 @@ def display_data(dataset):
     print(h5[dataset][:])  # prints whole dataset
 
 
-preprocess()
-display_data(DICT_NAME)
-display_data(TRAIN_NAME)
+if __name__ ==  "__main__":
+    preprocess()
+    display_data(DICT_NAME)
+    display_data(TRAIN_NAME)

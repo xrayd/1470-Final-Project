@@ -6,30 +6,50 @@ class Model(tf.keras.Model):
 
     def __init__(self):
         super(Model, self).__init__()  # TODO: IMPLEMENT ALL THE SIZES FOUND HERE
-        self.input_size = 0
-        self.latent_size = 0
+        self.input_size = 80
+        self.latent_size = 292
         self.hidden_dim = 128
+        self.encoder_out_size = 435
+
         self.encoder = tf.keras.Sequential([
-            tf.keras.layers.Conv1D(activation='selu'),
-            tf.keras.layers.Conv1D(activation='selu'),
-            tf.keras.layers.Conv1D(activation='selu'),
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(activation='selu')
+            tf.keras.layers.Conv1D(9, input_shape=(1000, 80, 52), kernel_size=9, activation='selu'),
+            tf.keras.layers.Conv1D(9, kernel_size=9, activation='selu'),
+            tf.keras.layers.Conv1D(10, kernel_size=11, activation='selu'),
+            tf.keras.layers.Dense(435, activation='selu')
         ])
         self.decoder = tf.keras.Sequential([
-            tf.keras.layers.Dense(activation='selu'),
-            tf.keras.layers.GRU(),
-            tf.keras.layers.Dense(activation='softmax')
+            # Perhaps 292 by 435
+            tf.keras.layers.Dense(292, input_shape=(54000, 292), activation='selu'),
+            tf.keras.layers.GRU(501),
+            tf.keras.layers.Dense(4160, activation='softmax')
         ])
         self.mu_layer = tf.keras.layers.Dense(self.latent_size)
         self.logvar_layer = tf.keras.layers.Dense(self.latent_size)
 
     def call(self, input):
+        print("Input OUT")
+        print(input.shape)
+
         encoder_out = self.encoder(input)
+        encoder_out = tf.reshape(encoder_out, (-1, encoder_out.shape[2]))
+        print("Encoder OUT")
+        print(encoder_out.shape)
+
         mu = self.mu_layer(encoder_out)
         logvar = self.logvar_layer(encoder_out)
         latent_rep = self.reparametrize(mu, logvar)
+        print("Latent Rep OUT")
+        print(latent_rep.shape)
+
+        latent_rep = tf.reshape(latent_rep, (1000, -1, 292))
+
+        print("Latent Rep AFTER RESHAPE")
+        print(latent_rep.shape)
         decoder_out = self.decoder(latent_rep)
+        decoder_out = tf.reshape(decoder_out, (1000, 80, 52))
+
+        print("Decoder Out")
+
         return decoder_out, mu, logvar
 
     def loss(self, decoder_out, input, mu, logvar):  # implementation of VAE loss; combo of reconstruction and KL
