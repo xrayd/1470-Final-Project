@@ -35,8 +35,8 @@ def preprocess():
 
     print("Processing data... this may take a while...")
     train_smiles, test_smiles = split(smiles_strings, shuffle=True, test_size=TEST_SIZE)
-    train_smiles = np.array(train_smiles.map(lambda x: one_hot_smile(x, character_dict)))
-    test_smiles = np.array(test_smiles.map(lambda x: one_hot_smile(x, character_dict)))
+    train_smiles = np.array(train_smiles.map(lambda x: one_hot_smile(x, character_dict, preprocess=True)))
+    test_smiles = np.array(test_smiles.map(lambda x: one_hot_smile(x, character_dict, preprocess=True)))
 
     print("Loading data into h5py file...")
     with h5py.File(OUT_FILE, 'w') as f:  # saves all data to h5 file; copies over train_smiles and test_smiles to data
@@ -68,7 +68,7 @@ def create_chardict(strings):
     return charlist
 
 
-def one_hot_smile(smile_string, character_dict):
+def one_hot_smile(smile_string, character_dict, preprocess):
     """
     Turns a smile string into a one-hot encoded vector for each letter in dictionary.
     :param smile_string: string to turn into one-hot vectors
@@ -78,7 +78,10 @@ def one_hot_smile(smile_string, character_dict):
     where 0 = 'h', 1 = 'b', 2 = 'c', 3 = '0').
     """
     smile_string = pad_smile(smile_string)
-    one_hots = [create_one_hot(character_dict.index(char), character_dict) for char in smile_string]
+    if preprocess:
+        one_hots = [create_one_hot(character_dict.index(char), character_dict) for char in smile_string]
+    else:
+        one_hots = [create_one_hot(character_dict.index(bytes(char, 'utf-8')), character_dict) for char in smile_string]
     one_hots = np.array(one_hots)
     return one_hots
 
@@ -107,9 +110,9 @@ def pad_smile(smile_string):
         return smile_string.ljust(MAX_SMILE_LENGTH)
 
 
-def un_encode(smile_onehots, character_dict):
+def un_encode(smile_onehots, character_dict, preprocess):
     """
-    Mostly used for testing, but can unencode from one-hots to SMILE strings. Verified as accurate!
+    Can unencode from one-hots to SMILE strings. Verified as accurate!
     :param smile_onehots: 2D array of one-hot encodings for a given SMILE string
     :param character_dict: list dictionary containing all letters
     :return: the SMILE string represented by the array of one hots
@@ -117,8 +120,11 @@ def un_encode(smile_onehots, character_dict):
     smile = ""
     for i in range(len(smile_onehots)):
         for j in range(len(smile_onehots[i])):
-            if smile_onehots[i][j]:
-                smile += character_dict[j]
+            if preprocess:
+                if smile_onehots[i][j]:
+                    smile += character_dict[j]
+        best_char_dex = np.argmax(smile_onehots[i])
+        smile += character_dict[best_char_dex].decode('utf-8')
     return smile
 
 

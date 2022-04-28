@@ -12,14 +12,14 @@ class Model(tf.keras.Model):
         self.encoder_out_size = 435
 
         self.encoder = tf.keras.Sequential([
-            tf.keras.layers.Conv1D(9, input_shape=(1000, 80, 52), kernel_size=9, activation='selu'),
-            tf.keras.layers.Conv1D(9, kernel_size=9, activation='selu'),
-            tf.keras.layers.Conv1D(10, kernel_size=11, activation='selu'),
-            tf.keras.layers.Dense(435, activation='selu')
+            tf.keras.layers.Conv1D(9, input_shape=(1000, 80, 52), kernel_size=9, activation='swish'),  # just do it
+            tf.keras.layers.Conv1D(9, kernel_size=9, activation='swish'),
+            tf.keras.layers.Conv1D(10, kernel_size=11, activation='swish'),
+            tf.keras.layers.Dense(435, activation='swish')
         ])
         self.decoder = tf.keras.Sequential([
             # Perhaps 292 by 435
-            tf.keras.layers.Dense(292, input_shape=(54000, 292), activation='selu'),
+            tf.keras.layers.Dense(292, input_shape=(54000, 292), activation='swish'),
             tf.keras.layers.GRU(501),
             tf.keras.layers.Dense(4160, activation='softmax')
         ])
