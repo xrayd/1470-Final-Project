@@ -2,6 +2,7 @@ import tensorflow as tf
 from preprocess import TRAIN_NAME, TEST_NAME, OUT_FILE
 import h5py
 from model import Model
+import numpy as np
 
 
 def train_model(model, data, batch_size=1000):
@@ -9,9 +10,10 @@ def train_model(model, data, batch_size=1000):
     total_loss = 0
     for i in range(0, data.shape[0], batch_size):  # loop over all training examples we have
         inputs = data[i:i+batch_size]  # creating a batch of inputs here
-        out, mu, logvar = model.call(inputs)
         with tf.GradientTape() as tape:
+            out, mu, logvar = model.call(inputs)
             loss = model.loss(out, inputs, mu, logvar)
+            print(loss)
             total_loss += loss
         gradient = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradient, model.trainable_variables))
@@ -27,12 +29,8 @@ def main():
     train = data[TRAIN_NAME][:]
     test = data[TEST_NAME][:]
 
-    print(train.shape)
-    input()
-
     print("Now making model")
     molencoder = Model()
-    input()
 
     print("Now training")
     total_loss = train_model(molencoder, train)

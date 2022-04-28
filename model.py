@@ -27,28 +27,17 @@ class Model(tf.keras.Model):
         self.logvar_layer = tf.keras.layers.Dense(self.latent_size)
 
     def call(self, input):
-        print("Input OUT")
-        print(input.shape)
-
         encoder_out = self.encoder(input)
         encoder_out = tf.reshape(encoder_out, (-1, encoder_out.shape[2]))
-        print("Encoder OUT")
-        print(encoder_out.shape)
 
         mu = self.mu_layer(encoder_out)
         logvar = self.logvar_layer(encoder_out)
         latent_rep = self.reparametrize(mu, logvar)
-        print("Latent Rep OUT")
-        print(latent_rep.shape)
 
         latent_rep = tf.reshape(latent_rep, (1000, -1, 292))
 
-        print("Latent Rep AFTER RESHAPE")
-        print(latent_rep.shape)
         decoder_out = self.decoder(latent_rep)
         decoder_out = tf.reshape(decoder_out, (1000, 80, 52))
-
-        print("Decoder Out")
 
         return decoder_out, mu, logvar
 
