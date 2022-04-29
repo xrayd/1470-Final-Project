@@ -110,7 +110,7 @@ def pad_smile(smile_string):
         return smile_string.ljust(MAX_SMILE_LENGTH)
 
 
-def un_encode(smile_onehots, character_dict, preprocess):
+def un_encode(smile_onehots, character_dict):
     """
     Can unencode from one-hots to SMILE strings. Verified as accurate!
     :param smile_onehots: 2D array of one-hot encodings for a given SMILE string
@@ -120,11 +120,8 @@ def un_encode(smile_onehots, character_dict, preprocess):
     smile = ""
     for i in range(len(smile_onehots)):
         for j in range(len(smile_onehots[i])):
-            if preprocess:
-                if smile_onehots[i][j]:
-                    smile += character_dict[j]
-        best_char_dex = np.argmax(smile_onehots[i])
-        smile += character_dict[best_char_dex].decode('utf-8')
+            if smile_onehots[i][j]:
+                smile += character_dict[j]
     return smile
 
 
