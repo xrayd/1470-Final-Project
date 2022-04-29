@@ -39,7 +39,7 @@ def generate_molecules(model, character_dict, smile):  # this acts as our test f
     probabilities[-1] = difference
     # END SUMMATION TO 1 CORRECTION
     new_smile = ""
-    for i in range(len(distribution)):
+    for i in range(len(distribution)):  # TODO: CORRECT SAMPLING SO IT IGNORES SPACES; remove probability of finding a space from probabilities, slowly distribute over other chars
         sampled_char_idx = np.random.choice(np.arange(len(character_dict)), p=probabilities)  # samples from dist
         new_smile += character_dict[sampled_char_idx].decode('utf-8')
     return new_smile
