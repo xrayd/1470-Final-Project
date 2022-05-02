@@ -4,7 +4,7 @@ import numpy as np
 import h5py
 
 # hyperparameters for dataset processing
-MAX_SMILE_LENGTH = 80
+MAX_SMILE_LENGTH = 120
 SAMPLE_NUM = 500_000  # we have a total of 1,678,393 molecules available; preprocess time depends on this; 500k base
 SMILES_COL_NAME = 'canonical_smiles'  # this is default column name
 TEST_SIZE = 0.2
@@ -136,7 +136,7 @@ def display_data(dataset):
     print(h5[dataset][:])  # prints whole dataset
 
 
-if __name__ ==  "__main__":
+if __name__ == "__main__":
     preprocess()
     display_data(DICT_NAME)
     display_data(TRAIN_NAME)
