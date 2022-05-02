@@ -6,38 +6,35 @@ class Model(tf.keras.Model):
 
     def __init__(self):
         super(Model, self).__init__()  # TODO: IMPLEMENT ALL THE SIZES FOUND HERE
-        self.input_size = 80
-        self.latent_size = 292
-        self.hidden_dim = 128
-        self.encoder_out_size = 435
+        self.smile_length = 80
+        self.vocab_length = 52
+        self.input_size = self.smile_length * self.vocab_length
+        self.latent_size = 64
+        self.hidden_dim = 64
 
         self.encoder = tf.keras.Sequential([
-            tf.keras.layers.Conv1D(9, input_shape=(1000, 80, 52), kernel_size=9, activation='swish'),  # just do it
-            tf.keras.layers.Conv1D(9, kernel_size=9, activation='swish'),
-            tf.keras.layers.Conv1D(10, kernel_size=11, activation='swish'),
-            tf.keras.layers.Dense(435, activation='swish')
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(self.hidden_dim, input_shape=(1, self.input_size), activation='swish'),
+            tf.keras.layers.Dense(self.hidden_dim, activation='swish'),
+            tf.keras.layers.Dense(self.hidden_dim, activation='swish')
         ])
         self.decoder = tf.keras.Sequential([
             # Perhaps 292 by 435
-            tf.keras.layers.Dense(292, input_shape=(54000, 292), activation='swish'),
-            tf.keras.layers.GRU(501),
-            tf.keras.layers.Dense(4160, activation='softmax')
+            tf.keras.layers.Dense(self.hidden_dim, input_shape=(self.latent_size,), activation='swish'),
+            # tf.keras.layers.GRU(self.hidden_dim),
+            tf.keras.layers.Dense(self.hidden_dim, activation='swish'),
+            tf.keras.layers.Dense(self.input_size, activation='softmax'),
+            tf.keras.layers.Reshape((1, self.smile_length, self.vocab_length))
         ])
         self.mu_layer = tf.keras.layers.Dense(self.latent_size)
         self.logvar_layer = tf.keras.layers.Dense(self.latent_size)
 
     def call(self, input):
         encoder_out = self.encoder(input)
-        encoder_out = tf.reshape(encoder_out, (-1, encoder_out.shape[2]))
-
         mu = self.mu_layer(encoder_out)
         logvar = self.logvar_layer(encoder_out)
         latent_rep = self.reparametrize(mu, logvar)
-
-        latent_rep = tf.reshape(latent_rep, (1000, -1, 292))
-
         decoder_out = self.decoder(latent_rep)
-        decoder_out = tf.reshape(decoder_out, (1000, 80, 52))
 
         return decoder_out, mu, logvar
 

@@ -5,10 +5,12 @@ from model import Model
 import numpy as np
 
 
-def train_model(model, data, batch_size=1000):
-    optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+def train_model(model, data, batch_size=128):
+    switch = True
+    optimizer_max = tf.keras.optimizers.Adam(learning_rate=0.01)
+    optimizer_min = tf.keras.optimizers.Adam(learning_rate=0.001)
     total_loss = 0
-    for i in range(0, data.shape[0] - 390000, batch_size):  # loop over all training examples we have
+    for i in range(0, data.shape[0] - 300000, batch_size):  # loop over all training examples we have
         inputs = data[i:i+batch_size]  # creating a batch of inputs here
         with tf.GradientTape() as tape:
             out, mu, logvar = model.call(inputs)
@@ -16,7 +18,14 @@ def train_model(model, data, batch_size=1000):
             print("Batch " + str(i) + " loss: " + str(float(loss)))
             total_loss += loss
         gradient = tape.gradient(loss, model.trainable_variables)
-        optimizer.apply_gradients(zip(gradient, model.trainable_variables))
+        if i % 10000 == 0 and i != 0:  # switch LR every 10k samples; "cyclical learning rate" to avoid local min
+            switch = not switch
+            print("Changing learning rate...")
+        if switch:
+            optimizer_max.apply_gradients(zip(gradient, model.trainable_variables))
+        else:
+            optimizer_min.apply_gradients(zip(gradient, model.trainable_variables))
+
     return total_loss
 
 
@@ -31,18 +40,32 @@ def generate_molecules(model, character_dict, smile):  # this acts as our test f
     one_hot = one_hot_smile(pad_smile(smile), character_dict, preprocess=False)
     one_reshape = np.repeat(one_hot, 1000)  # need this to be compatible with linear layers
     reshape = tf.reshape(one_reshape, [1000, 80, 52])
-    distribution = model.call(reshape)[0]  # select the first output of linear layers; they're all the same
-    # BEGIN SUMMATION TO 1 CORRECTION
-    probabilities = list(distribution[0][0])
-    prob_sum = np.sum(probabilities[:-1])
-    difference = 1 - prob_sum
-    probabilities[-1] = difference
-    # END SUMMATION TO 1 CORRECTION
+    output, _, _ = model.call(reshape)  # select the first output of linear layers; they're all the same
+    distribution = output[0]
+
     new_smile = ""
-    for i in range(len(distribution)):  # TODO: CORRECT SAMPLING SO IT IGNORES SPACES; remove probability of finding a space from probabilities, slowly distribute over other chars
+    for i in range(len(distribution[0])):  # TODO: CORRECT SAMPLING SO IT IGNORES SPACES; remove probability of finding a space from probabilities, slowly distribute over other chars
+        target = distribution[0][i]  # gets appropriate distribution amongst characters
+        probabilities = create_relative_probabilities(target)
         sampled_char_idx = np.random.choice(np.arange(len(character_dict)), p=probabilities)  # samples from dist
         new_smile += character_dict[sampled_char_idx].decode('utf-8')
     return new_smile
+
+
+def create_relative_probabilities(char_dist):
+    total = np.sum(char_dist)
+    proportion_list = list()
+    for value in char_dist:
+        proportion = float(value / total)
+        proportion_list.append(round(proportion, 3))  # rounds proportion to 4 decimals; make convergence to 1 easier
+
+    # BEGIN SUM TO 1 CORRECTION HERE
+    post_sum = np.sum(proportion_list[:-1])
+    difference = 1 - post_sum
+    proportion_list[-1] = difference
+    # END SUM TO 1 CORRECTION HERE
+
+    return proportion_list
 
 
 def main():
@@ -64,12 +87,12 @@ def main():
     print("Generating similar molecule...")
     new_mol = generate_molecules(molencoder, char_dict, "HC(H)=C(H)(H)")
     print("New Molecule: " + new_mol)
-    new_mol = generate_molecules(molencoder, char_dict, "CC")
-    print("New Molecule: " + new_mol)
-    new_mol = generate_molecules(molencoder, char_dict, "CC(C)(C)CC")
-    print("New Molecule: " + new_mol)
-    new_mol = generate_molecules(molencoder, char_dict, "CC(CC)C")
-    print("New Molecule: " + new_mol)
+    # new_mol = generate_molecules(molencoder, char_dict, "CC")
+    # print("New Molecule: " + new_mol)
+    # new_mol = generate_molecules(molencoder, char_dict, "CC(C)(C)CC")
+    # print("New Molecule: " + new_mol)
+    # new_mol = generate_molecules(molencoder, char_dict, "CC(CC)C")
+    # print("New Molecule: " + new_mol)
 
 
 if __name__ == "__main__":
