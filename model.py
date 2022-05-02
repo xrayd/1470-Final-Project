@@ -7,7 +7,7 @@ class Model(tf.keras.Model):
     def __init__(self):
         super(Model, self).__init__()
         self.smile_len = MAX_SMILE_LENGTH
-        self.chardict_len = 52
+        self.chardict_len = 55
         self.latent_size = 292
         self.hidden_dim = 128
         self.encoder_out_size = 435
@@ -21,8 +21,8 @@ class Model(tf.keras.Model):
         self.decoder = tf.keras.Sequential([
             # Perhaps 292 by 435
             tf.keras.layers.Dense(292, input_shape=(1, 292), activation='swish'),
-            tf.keras.layers.GRU(501, return_sequences=True),
-            tf.keras.layers.Dense(4160)
+            tf.keras.layers.GRU(501),
+            tf.keras.layers.Dense(self.chardict_len * self.smile_len)
         ])
         self.mu_layer = tf.keras.layers.Dense(self.latent_size)
         self.logvar_layer = tf.keras.layers.Dense(self.latent_size)
@@ -37,7 +37,6 @@ class Model(tf.keras.Model):
         latent_rep = self.reparametrize(mu, logvar)
 
         latent_rep = tf.reshape(latent_rep, (1000, 1, 292))
-        print(latent_rep.shape)
         decoder_out = self.decoder(latent_rep)
         print(decoder_out.shape)
         decoder_out = tf.reshape(decoder_out, (1000, self.smile_len, self.chardict_len))

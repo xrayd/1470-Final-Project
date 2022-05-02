@@ -13,7 +13,7 @@ def train_model(model, data, batch_size=BATCH_SIZE):
     optimizer_max = tf.keras.optimizers.Adam(learning_rate=0.01)
     optimizer_min = tf.keras.optimizers.Adam(learning_rate=0.001)
     total_loss = 0
-    for i in range(0, data.shape[0] - 395000, batch_size):  # loop over all training examples we have
+    for i in range(0, data.shape[0] - 380000, batch_size):  # loop over all training examples we have
         inputs = data[i:i+batch_size]  # creating a batch of inputs here
         with tf.GradientTape() as tape:
             out, mu, logvar = model.call(inputs)
@@ -42,7 +42,7 @@ def generate_molecules(model, character_dict, smile):  # this acts as our test f
     """
     one_hot = one_hot_smile(pad_smile(smile), character_dict, preprocess=False)
     one_reshape = np.repeat(one_hot, BATCH_SIZE)  # need this to be compatible with linear layers
-    reshape = tf.reshape(one_reshape, [BATCH_SIZE, MAX_SMILE_LENGTH, 52])
+    reshape = tf.reshape(one_reshape, [BATCH_SIZE, MAX_SMILE_LENGTH, 55])
     output, _, _ = model.call(reshape)  # select the first output of linear layers; they're all the same
     distribution = output[0]
 
@@ -109,9 +109,6 @@ def main():
     train = data[TRAIN_NAME][:]
     test = data[TEST_NAME][:]
     char_dict = list(data[DICT_NAME][:])
-
-    print(len(char_dict))
-    input()
 
     print("Making model...")
     molencoder = Model()
