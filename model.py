@@ -15,6 +15,7 @@ class Model(tf.keras.Model):
             tf.keras.layers.Conv1D(9, input_shape=(1000, 80, 52), kernel_size=9, activation='swish'),  # just do it
             tf.keras.layers.Conv1D(9, kernel_size=9, activation='swish'),
             tf.keras.layers.Conv1D(10, kernel_size=11, activation='swish'),
+            tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(435, activation='swish')
         ])
         self.decoder = tf.keras.Sequential([
@@ -28,7 +29,6 @@ class Model(tf.keras.Model):
 
     def call(self, input):
         encoder_out = self.encoder(input)
-        encoder_out = tf.reshape(encoder_out, (-1, encoder_out.shape[2]))
 
         mu = self.mu_layer(encoder_out)
         logvar = self.logvar_layer(encoder_out)
