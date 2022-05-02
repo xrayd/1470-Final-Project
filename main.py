@@ -5,12 +5,12 @@ from model import Model
 import numpy as np
 
 
-def train_model(model, data, batch_size=128):
+def train_model(model, data, batch_size=1000):
     switch = True
     optimizer_max = tf.keras.optimizers.Adam(learning_rate=0.01)
     optimizer_min = tf.keras.optimizers.Adam(learning_rate=0.001)
     total_loss = 0
-    for i in range(0, data.shape[0] - 300000, batch_size):  # loop over all training examples we have
+    for i in range(0, data.shape[0] - 350000, batch_size):  # loop over all training examples we have
         inputs = data[i:i+batch_size]  # creating a batch of inputs here
         with tf.GradientTape() as tape:
             out, mu, logvar = model.call(inputs)
@@ -44,8 +44,8 @@ def generate_molecules(model, character_dict, smile):  # this acts as our test f
     distribution = output[0]
 
     new_smile = ""
-    for i in range(len(distribution[0])):  # TODO: CORRECT SAMPLING SO IT IGNORES SPACES; remove probability of finding a space from probabilities, slowly distribute over other chars
-        target = distribution[0][i]  # gets appropriate distribution amongst characters
+    for i in range(len(distribution)):
+        target = distribution[i]  # gets appropriate distribution amongst characters
         probabilities = create_relative_probabilities(target)
         sampled_char_idx = np.random.choice(np.arange(len(character_dict)), p=probabilities)  # samples from dist
         new_smile += character_dict[sampled_char_idx].decode('utf-8')
@@ -53,6 +53,14 @@ def generate_molecules(model, character_dict, smile):  # this acts as our test f
 
 
 def create_relative_probabilities(char_dist):
+    """
+    Bootleg fix to softmax running over the wrong thing in the decoder. Given some data, it normalizes it to it's
+    all proportional to the original data, but sums up to one (for input into random sampling in generate
+    molecule). Does this by finding the total sum, then creating a list where each value is = value / total, or its
+    % capitalization on the total data.
+    :param char_dist: (smile_length, dict_lengh) output from the model with data on a character distribution
+    :return: list of probabilities of each character
+    """
     total = np.sum(char_dist)
     proportion_list = list()
     for value in char_dist:
@@ -62,7 +70,12 @@ def create_relative_probabilities(char_dist):
     # BEGIN SUM TO 1 CORRECTION HERE
     post_sum = np.sum(proportion_list[:-1])
     difference = 1 - post_sum
-    proportion_list[-1] = difference
+    if difference > 0:
+        proportion_list[-1] = difference
+    else:  # cannot have negative numbers in probability list!
+        for prob in proportion_list:
+            if prob > abs(difference):
+                prob += difference
     # END SUM TO 1 CORRECTION HERE
 
     return proportion_list
@@ -87,12 +100,12 @@ def main():
     print("Generating similar molecule...")
     new_mol = generate_molecules(molencoder, char_dict, "HC(H)=C(H)(H)")
     print("New Molecule: " + new_mol)
-    # new_mol = generate_molecules(molencoder, char_dict, "CC")
-    # print("New Molecule: " + new_mol)
-    # new_mol = generate_molecules(molencoder, char_dict, "CC(C)(C)CC")
-    # print("New Molecule: " + new_mol)
-    # new_mol = generate_molecules(molencoder, char_dict, "CC(CC)C")
-    # print("New Molecule: " + new_mol)
+    new_mol = generate_molecules(molencoder, char_dict, "CC")
+    print("New Molecule: " + new_mol)
+    new_mol = generate_molecules(molencoder, char_dict, "CC(C)(C)CC")
+    print("New Molecule: " + new_mol)
+    new_mol = generate_molecules(molencoder, char_dict, "CC(CC)C")
+    print("New Molecule: " + new_mol)
 
 
 if __name__ == "__main__":
