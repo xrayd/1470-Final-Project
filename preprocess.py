@@ -31,7 +31,7 @@ def preprocess():
     smiles_strings = chembl22[SMILES_COL_NAME]
 
     character_dict = create_chardict(smiles_strings)
-    character_dict.append(' ')  # appends the padding character whitespace
+    character_dict.append(' ')  # appends the padding character whitespace; this is always the last character
 
     print("Processing data... this may take a while...")
     train_smiles, test_smiles = split(smiles_strings, shuffle=True, test_size=TEST_SIZE)

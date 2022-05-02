@@ -10,7 +10,7 @@ def train_model(model, data, batch_size=1000):
     optimizer_max = tf.keras.optimizers.Adam(learning_rate=0.01)
     optimizer_min = tf.keras.optimizers.Adam(learning_rate=0.001)
     total_loss = 0
-    for i in range(0, data.shape[0] - 350000, batch_size):  # loop over all training examples we have
+    for i in range(0, data.shape[0] - 390000, batch_size):  # loop over all training examples we have
         inputs = data[i:i+batch_size]  # creating a batch of inputs here
         with tf.GradientTape() as tape:
             out, mu, logvar = model.call(inputs)
@@ -57,7 +57,7 @@ def create_relative_probabilities(char_dist):
     Bootleg fix to softmax running over the wrong thing in the decoder. Given some data, it normalizes it to it's
     all proportional to the original data, but sums up to one (for input into random sampling in generate
     molecule). Does this by finding the total sum, then creating a list where each value is = value / total, or its
-    % capitalization on the total data.
+    % capitalization on the total data. NOTE: last probability is always that of the " " (space) character.
     :param char_dist: (smile_length, dict_lengh) output from the model with data on a character distribution
     :return: list of probabilities of each character
     """
@@ -68,14 +68,15 @@ def create_relative_probabilities(char_dist):
         proportion_list.append(round(proportion, 3))  # rounds proportion to 4 decimals; make convergence to 1 easier
 
     # BEGIN SUM TO 1 CORRECTION HERE
-    post_sum = np.sum(proportion_list[:-1])
-    difference = 1 - post_sum
-    if difference > 0:
+    difference = 1 - np.sum(proportion_list[:-1])  # finds sum of all values but last one
+    if difference >= 0:  # if different is positive, last value is equal to difference
         proportion_list[-1] = difference
-    else:  # cannot have negative numbers in probability list!
-        for prob in proportion_list:
-            if prob > abs(difference):
-                prob += difference
+    else:  # cannot have negative numbers in probability list, so we add it to something that can absorb it
+        assigned = False
+        for i in range(len(proportion_list)):
+            if proportion_list[i] > abs(difference) and not assigned:
+                proportion_list[i] += difference
+                assigned = True
     # END SUM TO 1 CORRECTION HERE
 
     return proportion_list
@@ -100,11 +101,7 @@ def main():
     print("Generating similar molecule...")
     new_mol = generate_molecules(molencoder, char_dict, "HC(H)=C(H)(H)")
     print("New Molecule: " + new_mol)
-    new_mol = generate_molecules(molencoder, char_dict, "CC")
-    print("New Molecule: " + new_mol)
-    new_mol = generate_molecules(molencoder, char_dict, "CC(C)(C)CC")
-    print("New Molecule: " + new_mol)
-    new_mol = generate_molecules(molencoder, char_dict, "CC(CC)C")
+    new_mol = generate_molecules(molencoder, char_dict, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
     print("New Molecule: " + new_mol)
 
 
