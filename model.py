@@ -9,7 +9,7 @@ class Model(tf.keras.Model):
         self.smile_len = MAX_SMILE_LENGTH
         self.chardict_len = 55
         self.latent_size = 292
-        self.hidden_dim = 128
+        self.hidden_dim = 512
         self.encoder_out_size = 435
 
         self.encoder = tf.keras.Sequential([

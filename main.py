@@ -13,7 +13,7 @@ def train_model(model, data, batch_size=BATCH_SIZE):
     optimizer_max = tf.keras.optimizers.Adam(learning_rate=0.01)
     optimizer_min = tf.keras.optimizers.Adam(learning_rate=0.001)
     total_loss = 0
-    for i in range(0, data.shape[0] - 380000, batch_size):  # loop over all training examples we have
+    for i in range(0, data.shape[0] - 390000, batch_size):  # loop over all training examples we have
         inputs = data[i:i+batch_size]  # creating a batch of inputs here
         with tf.GradientTape() as tape:
             out, mu, logvar = model.call(inputs)
