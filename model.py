@@ -13,15 +13,16 @@ class Model(tf.keras.Model):
         self.encoder_out_size = 435
 
         self.encoder = tf.keras.Sequential([
-            tf.keras.layers.Conv1D(9, input_shape=(1000, self.smile_len, self.chardict_len), kernel_size=9, activation='swish'),  # just do it
-            tf.keras.layers.Conv1D(9, kernel_size=9, activation='swish'),
-            tf.keras.layers.Conv1D(10, kernel_size=11, activation='swish'),
+            tf.keras.layers.Conv1D(32, input_shape=(1000, self.smile_len, self.chardict_len), kernel_size=11, activation='swish'),  # just do it
+            tf.keras.layers.Conv1D(16, kernel_size=9, activation='swish'),
+            tf.keras.layers.Conv1D(8, kernel_size=9, activation='swish'),
             tf.keras.layers.Flatten(),
         ])
         self.decoder = tf.keras.Sequential([
             # Perhaps 292 by 435
             tf.keras.layers.Dense(292, input_shape=(1, 292), activation='swish'),
             tf.keras.layers.GRU(501),
+            tf.keras.layers.Dense(self.hidden_dim, activation='swish'),
             tf.keras.layers.Dense(self.chardict_len * self.smile_len)
         ])
         self.mu_layer = tf.keras.layers.Dense(self.latent_size)
