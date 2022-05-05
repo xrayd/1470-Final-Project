@@ -16,6 +16,8 @@ class Model(tf.keras.Model):
             tf.keras.layers.Conv1D(32, input_shape=(1000, self.smile_len, self.chardict_len), kernel_size=11, activation='swish'),  # just do it
             tf.keras.layers.Conv1D(16, kernel_size=9, activation='swish'),
             tf.keras.layers.Conv1D(8, kernel_size=9, activation='swish'),
+            # TODO: try putting an RNN (GRU) here
+            # TODO: try running for all 500k samples, or 100k at a time
             tf.keras.layers.Flatten(),
         ])
         self.decoder = tf.keras.Sequential([
