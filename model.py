@@ -16,8 +16,6 @@ class Model(tf.keras.Model):
             tf.keras.layers.Conv1D(32, input_shape=(1000, self.smile_len, self.chardict_len), kernel_size=11, activation='swish'),  # just do it
             tf.keras.layers.Conv1D(16, kernel_size=9, activation='swish'),
             tf.keras.layers.Conv1D(8, kernel_size=9, activation='swish'),
-            # TODO: try putting an RNN (GRU) here
-            # TODO: try running for all 500k samples, or 100k at a time
             tf.keras.layers.Flatten(),
         ])
         self.decoder = tf.keras.Sequential([
@@ -41,7 +39,6 @@ class Model(tf.keras.Model):
 
         latent_rep = tf.reshape(latent_rep, (1000, 1, 292))
         decoder_out = self.decoder(latent_rep)
-        print(decoder_out.shape)
         decoder_out = tf.reshape(decoder_out, (1000, self.smile_len, self.chardict_len))
         softmax = tf.keras.layers.Softmax(axis=2)
         decoder_out = softmax(decoder_out)
