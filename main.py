@@ -3,6 +3,7 @@ from preprocess import DICT_NAME, TRAIN_NAME, TEST_NAME, OUT_FILE, MAX_SMILE_LEN
 import h5py
 from model import Model
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 BATCH_SIZE = 1000
@@ -13,12 +14,16 @@ def train_model(model, data, batch_size=BATCH_SIZE):
     optimizer_max = tf.keras.optimizers.Adam(learning_rate=0.01)
     optimizer_min = tf.keras.optimizers.Adam(learning_rate=0.001)
     total_loss = 0
+    loss_list = list()
+    batch_list = list()
     for i in range(0, data.shape[0], batch_size):  # loop over all training examples we have
         inputs = data[i:i+batch_size]  # creating a batch of inputs here
         with tf.GradientTape() as tape:
             out, mu, logvar = model.call(inputs)
             loss = model.loss(out, inputs, mu, logvar)
-            print("Batch " + str(i) + " loss: " + str(float(loss)))
+            print("Batch " + str(i / 1000) + " loss: " + str(float(loss)))
+            loss_list.append(loss)
+            batch_list.append(i/1000)
             total_loss += loss
         gradient = tape.gradient(loss, model.trainable_variables)
         if i % 10000 == 0 and i != 0:  # switch LR every 10k samples; "cyclical learning rate" to avoid local min
@@ -28,6 +33,13 @@ def train_model(model, data, batch_size=BATCH_SIZE):
             optimizer_max.apply_gradients(zip(gradient, model.trainable_variables))
         else:
             optimizer_min.apply_gradients(zip(gradient, model.trainable_variables))
+
+    plt.plot(batch_list, loss_list, color='black', linewidth=3.5)
+    plt.title('Loss by Batch', fontsize=14)
+    plt.xlabel('Batch Number')
+    plt.ylabel('VAE Loss')
+    plt.gcf().set_size_inches(10, 5)
+    plt.show()
 
     return total_loss
 
